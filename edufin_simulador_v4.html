@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+[data-theme="light"]{
+  --bg:#fff;--bg2:#f4f4f5;--txt:#18181b;--txt2:#71717a;
+  --bdr:rgba(0,0,0,0.1);--bdr2:rgba(0,0,0,0.18);
+  --topbar:#ffffff;--topbar-bdr:rgba(0,0,0,0.08);
+  --switch-bg:#e4e4e7;--switch-knob:#fff;
+}
+[data-theme="dark"]{
+  --bg:#18181b;--bg2:#27272a;--txt:#fafafa;--txt2:#a1a1aa;
+  --bdr:rgba(255,255,255,0.1);--bdr2:rgba(255,255,255,0.18);
+  --topbar:#18181b;--topbar-bdr:rgba(255,255,255,0.08);
+  --switch-bg:#3f3f46;--switch-knob:#18181b;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg2);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 0 2rem;transition:background .3s}
+.topbar{width:100%;max-width:480px;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;background:var(--topbar);border-bottom:0.5px solid var(--topbar-bdr);margin-bottom:.5rem;position:sticky;top:0;z-index:10;transition:background .3s}
+.topbar-brand{font-size:13px;font-weight:500;color:var(--txt);letter-spacing:-.2px}
+.topbar-brand span{color:var(--txt2);font-weight:400}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-link{font-size:11px;color:var(--txt2);text-decoration:none;display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:20px;border:0.5px solid var(--bdr);transition:background .15s,color .15s}
+.topbar-link:hover{background:var(--bg2);color:var(--txt)}
+.topbar-link svg{width:12px;height:12px;flex-shrink:0}
+.switch{position:relative;width:44px;height:24px;cursor:pointer;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0;position:absolute}
+.switch-track{width:44px;height:24px;background:var(--switch-bg);border-radius:12px;transition:background .3s;display:flex;align-items:center;padding:2px}
+.switch-knob{width:20px;height:20px;background:var(--switch-knob);border-radius:50%;transition:transform .3s;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+[data-theme="dark"] .switch-knob{transform:translateX(20px)}
+.copyright{width:100%;max-width:480px;text-align:center;padding:.75rem 1rem;font-size:11px;color:var(--txt2);border-top:0.5px solid var(--bdr);margin-top:.5rem}
+.copyright a{color:var(--txt2);text-decoration:none;border-bottom:0.5px solid var(--bdr2);transition:color .15s}
+.copyright a:hover{color:var(--txt)}
+.app{width:100%;max-width:480px;background:var(--bg);border-radius:16px;border:0.5px solid var(--bdr);overflow:hidden;min-height:600px;transition:background .3s,border-color .3s}
+.screen-start{padding:2rem 1.5rem;display:flex;flex-direction:column;gap:1rem}
+.start-hero{text-align:center;padding:1.5rem 0 1rem}
+.start-hero h1{font-size:22px;font-weight:500;color:var(--txt)}
+.start-hero p{font-size:14px;color:var(--txt2);margin-top:6px;line-height:1.6}
+.route-card{background:var(--bg);border:0.5px solid var(--bdr);border-radius:12px;padding:1.25rem;cursor:pointer;transition:border-color .15s,transform .1s}
+.route-card:hover{border-color:var(--bdr2);transform:translateY(-1px)}
+.rc-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px}
+.rc-bet .rc-icon{background:#1a1a2e}
+.rc-bank .rc-icon{background:#eaf3de}
+.route-card h3{font-size:15px;font-weight:500;color:var(--txt)}
+.route-card p{font-size:13px;color:var(--txt2);margin-top:4px;line-height:1.5}
+.rc-tag{display:inline-block;font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px;margin-top:8px}
+.rc-bet .rc-tag{background:#ff4d4d22;color:#a32d2d}
+.rc-bank .rc-tag{background:#e6f1fb;color:#185fa5}
+.sim-header{padding:1rem 1.25rem 0}
+.sim-header-inner{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:12px;padding:1rem 1.25rem}
+.sh-top{display:flex;align-items:flex-start;justify-content:space-between}
+.sh-label{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px}
+.sh-balance{font-size:18px;font-weight:500;color:var(--txt);margin-top:2px;transition:color .3s}
+.sh-balance.up{color:#1a7a42}
+.sh-balance.down{color:#c0392b}
+.sh-phase-badge{font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;background:#e6f1fb;color:#185fa5}
+.sh-mode{font-size:11px;color:var(--txt2);margin-top:4px;text-align:right}
+.candies-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;align-items:center}
+.candy{font-size:20px;line-height:1;transition:transform .2s}
+.candy.added{animation:popIn .3s ease}
+@keyframes popIn{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.3) rotate(5deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+.sim-body{padding:1rem 1.25rem}
+.phase-title{font-size:16px;font-weight:500;color:var(--txt);margin-bottom:4px}
+.phase-desc{font-size:13px;color:var(--txt2);line-height:1.5;margin-bottom:1rem}
+.bet-header{background:#1a1a2e;border-radius:12px 12px 0 0;padding:.75rem 1rem;display:flex;align-items:center;gap:10px}
+.match-flags{font-size:18px;display:flex;align-items:center;gap:4px}
+.match-title{color:white;font-size:13px;font-weight:500}
+.match-league{color:rgba(255,255,255,.55);font-size:11px}
+.bet-options{border:0.5px solid var(--bdr);border-top:none;border-radius:0 0 12px 12px;overflow:hidden}
+.bet-option{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1rem;border-bottom:0.5px solid var(--bdr);cursor:pointer;transition:background .1s;background:var(--bg)}
+.bet-option:last-child{border-bottom:none}
+.bet-option:hover{background:var(--bg2)}
+.bet-option.correct{background:#eaf3de;border-left:2px solid #3b6d11}
+.bet-option.wrong{background:#fcebeb;border-left:2px solid #a32d2d}
+.bo-left{display:flex;align-items:center;gap:8px}
+.bo-label{font-size:13px;color:var(--txt)}
+.bo-sublabel{font-size:11px;color:var(--txt2)}
+.bo-odd{background:#1a1a2e;color:white;font-size:13px;font-weight:500;padding:5px 10px;border-radius:6px;min-width:52px;text-align:center}
+.bet-option.correct .bo-odd{background:#3b6d11}
+.bet-option.wrong .bo-odd{background:#a32d2d}
+.bank-product{background:var(--bg);border:0.5px solid var(--bdr);border-radius:12px;padding:1.25rem;margin-bottom:.75rem}
+.bp-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.bp-badge{font-size:10px;font-weight:500;padding:3px 8px;border-radius:20px;text-transform:uppercase}
+.bp-badge.tesouro{background:#e6f1fb;color:#185fa5}
+.bp-badge.cdb{background:#eaf3de;color:#3b6d11}
+.bp-badge.lci{background:#faeeda;color:#854f0b}
+.bp-badge.juros{background:#eeedfe;color:#534ab7}
+.bp-name{font-size:15px;font-weight:500;color:var(--txt);margin:6px 0 2px}
+.bp-subtitle{font-size:12px;color:var(--txt2)}
+.bp-rate-num{font-size:20px;font-weight:500;color:#1a7a42}
+.bp-rate-label{font-size:11px;color:var(--txt2)}
+.bp-divider{border:none;border-top:0.5px solid var(--bdr);margin:10px 0}
+.bp-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+.bp-row-label{color:var(--txt2)}
+.bp-row-val{color:var(--txt);font-weight:500}
+.invest-btn{width:100%;padding:12px;border:none;border-radius:8px;background:#1a7a42;color:white;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s;margin-top:12px}
+.invest-btn:hover{opacity:.88}
+.invest-btn:disabled{opacity:.4;cursor:default}
+.feedback{border-radius:12px;padding:1rem 1.25rem;margin-top:1rem}
+.feedback.win{background:#eaf3de;border-left:3px solid #3b6d11}
+.feedback.lose{background:#fcebeb;border-left:3px solid #a32d2d}
+.feedback.neutral{background:var(--bg2);border-left:3px solid var(--bdr2)}
+.feedback-title{font-size:14px;font-weight:500;margin-bottom:4px}
+.feedback.win .feedback-title{color:#27500a}
+.feedback.lose .feedback-title{color:#791f1f}
+.feedback.neutral .feedback-title{color:var(--txt)}
+.feedback-body{font-size:13px;line-height:1.5;color:var(--txt2)}
+.feedback-amounts{margin-top:10px;display:flex;gap:10px}
+.fa-item{flex:1;background:rgba(255,255,255,.6);border-radius:8px;padding:8px 10px}
+[data-theme="dark"] .fa-item{background:rgba(255,255,255,.06)}
+.fa-label{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--txt2)}
+.fa-val{font-size:14px;font-weight:500;color:var(--txt)}
+.fa-val.green{color:#1a7a42}
+.fa-val.red{color:#c0392b}
+.chart-wrap{margin-top:1rem;background:var(--bg2);border:0.5px solid var(--bdr);border-radius:12px;padding:.75rem;height:140px}
+.chart-label{font-size:11px;color:var(--txt2);margin-bottom:6px}
+.chart-wrap canvas{max-height:110px}
+.next-btn{display:none;width:100%;margin-top:1rem;padding:13px;border:none;border-radius:8px;background:#1a1a2e;color:white;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.next-btn:hover{opacity:.85}
+.screen-end{padding:1.5rem}
+.end-hero{text-align:center;padding:1rem 0}
+.end-hero h2{font-size:20px;font-weight:500;color:var(--txt)}
+.end-subtitle{font-size:13px;color:var(--txt2);margin-top:4px}
+.result-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:1.25rem 0}
+.result-card{background:var(--bg2);border-radius:12px;padding:1rem;text-align:center}
+.r-label{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.4px}
+.r-value{font-size:20px;font-weight:500;margin-top:4px}
+.r-pct{font-size:12px;font-weight:500;padding:2px 8px;border-radius:20px;display:inline-block;margin-top:4px}
+.r-green{color:#1a7a42}.r-red{color:#c0392b}
+.r-pct-green{background:#eaf3de;color:#27500a}
+.r-pct-red{background:#fcebeb;color:#791f1f}
+.lesson-box{background:var(--bg2);border-radius:12px;padding:1.25rem;margin:.75rem 0;border-top:2px solid var(--bdr2)}
+.lesson-box h4{font-size:13px;font-weight:500;color:var(--txt);margin-bottom:6px}
+.lesson-box p{font-size:13px;color:var(--txt2);line-height:1.5}
+.compare-chart-wrap{background:var(--bg2);border-radius:12px;padding:.75rem;height:180px;margin-bottom:1rem}
+.restart-btn{width:100%;padding:13px;border:0.5px solid var(--bdr2);background:transparent;color:var(--txt);font-size:14px;border-radius:8px;cursor:pointer;transition:background .15s}
+.restart-btn:hover{background:var(--bg2)}
+.hidden{display:none!important}
+#screen-game{padding-bottom:1.5rem}
+.bet-tag{font-size:10px;padding:2px 6px;border-radius:10px;font-weight:500;margin-left:6px}
+.bet-tag.hot{background:#ff4d4d22;color:#a32d2d}
+.bet-tag.safe{background:#eaf3de;color:#27500a}
+.odds-info{font-size:11px;color:var(--txt2);margin-bottom:8px;padding:6px 10px;background:var(--bg2);border-radius:6px}
+.phase-progress{display:flex;gap:4px;margin-bottom:1rem}
+.pp-dot{flex:1;height:3px;border-radius:2px;background:var(--bdr);transition:background .3s}
+.pp-dot.done{background:#1a7a42}
+.pp-dot.active{background:#185fa5}
+.pp-dot.bet-done{background:#e24b4a}
+.pp-dot.bet-active{background:#e24b4a88}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">EduFin <span>Simulador</span></div>
+  <div class="topbar-right">
+    <a class="topbar-link" href="https://github.com/samuel123d" target="_blank">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.579.688.481C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      samuel123d
+    </a>
+    <label class="switch" title="Alternar tema">
+      <input type="checkbox" id="themeToggle" onchange="toggleTheme(this)">
+      <div class="switch-track">
+        <div class="switch-knob" id="switchKnob">☀️</div>
+      </div>
+    </label>
+  </div>
+</div>
+
+<div class="app">
+  <div id="screen-start" class="screen-start">
+    <div class="start-hero">
+      <h1>EduFin — Simulador</h1>
+      <p>Você começa com 5 🍬 balinhas.<br>Cada rodada é <strong>aleatória</strong>. Escolha sua rota.</p>
+    </div>
+    <div class="route-card rc-bet" onclick="startRoute('bet')">
+      <div class="rc-icon">🎰</div>
+      <h3>Casa de apostas</h3>
+      <p>Apostas com odds sortidas. Pode ganhar nas primeiras rodadas — mas o saldo final oscila entre 1 e 4 balinhas.</p>
+      <span class="rc-tag">Alto risco · Resultado imprevisível</span>
+    </div>
+    <div class="route-card rc-bank" onclick="startRoute('bank')">
+      <div class="rc-icon">🏦</div>
+      <h3>Renda fixa</h3>
+      <p>Rendimentos crescentes a cada fase. Os juros compostos podem te levar até 10 balinhas.</p>
+      <span class="rc-tag">Seguro · Pode chegar a 10 🍬</span>
+    </div>
+  </div>
+
+  <div id="screen-game" class="hidden">
+    <div class="sim-header">
+      <div class="sim-header-inner">
+        <div class="sh-top">
+          <div>
+            <div class="sh-label">Suas balinhas</div>
+            <div class="sh-balance" id="balanceDisplay">5 🍬</div>
+          </div>
+          <div style="text-align:right">
+            <div class="sh-phase-badge" id="phaseBadge">Fase 1 de 4</div>
+            <div class="sh-mode" id="modeLabel"></div>
+          </div>
+        </div>
+        <div class="candies-row" id="candiesRow"></div>
+      </div>
+    </div>
+    <div class="sim-body">
+      <div class="phase-progress" id="phaseProgress"></div>
+      <div class="phase-title" id="phaseTitle"></div>
+      <div class="phase-desc" id="phaseDesc"></div>
+      <div id="phaseContent"></div>
+      <div class="chart-wrap">
+        <div class="chart-label">Evolução das balinhas</div>
+        <canvas id="balanceChart"></canvas>
+      </div>
+      <div id="feedbackArea" class="hidden"></div>
+      <button class="next-btn" id="nextBtn" onclick="nextStep()">Continuar →</button>
+    </div>
+  </div>
+
+  <div id="screen-end" class="hidden screen-end">
+    <div class="end-hero">
+      <h2 id="endTitle">Resultado final</h2>
+      <p class="end-subtitle" id="endSubtitle"></p>
+    </div>
+    <div class="compare-chart-wrap"><canvas id="compareChart"></canvas></div>
+    <div class="result-cards" id="resultCards"></div>
+    <div class="lesson-box" id="lessonBox"></div>
+    <button class="restart-btn" onclick="restartApp()">← Jogar novamente</button>
+  </div>
+</div>
+
+<div class="copyright">
+  © 2025 <strong>samuel123d</strong> · Todos os direitos reservados ·
+  <a href="https://github.com/samuel123d" target="_blank">github.com/samuel123d</a>
+</div>
+
+<script>
+const CANDY='🍬', START=5, MAX_VIS=20;
+let candies=START, route='', phase=0, chartInst=null;
+let histData=[START], histLabels=['Início'], betFinal=null, bankFinal=null, phases=[];
+
+// ── TEMA ──────────────────────────────────────────────────
+function toggleTheme(el){
+  document.documentElement.setAttribute('data-theme', el.checked?'dark':'light');
+  document.getElementById('switchKnob').textContent = el.checked?'🌙':'☀️';
+}
+
+// ── POOLS ─────────────────────────────────────────────────
+const MATCHES=[
+  {flag1:'🇧🇷',flag2:'🇦🇷',title:'Brasil x Argentina',league:'Copa do Mundo · Quartas'},
+  {flag1:'🇫🇷',flag2:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',title:'França x Inglaterra',league:'Nations League · Semi'},
+  {flag1:'🇵🇹',flag2:'🇪🇸',title:'Portugal x Espanha',league:'Amistoso Internacional'},
+  {flag1:'🇩🇪',flag2:'🇮🇹',title:'Alemanha x Itália',league:'Eurocopa · Grupo A'},
+  {flag1:'🇳🇱',flag2:'🇧🇪',title:'Holanda x Bélgica',league:'Nations League · Final'},
+  {flag1:'🇺🇾',flag2:'🇨🇴',title:'Uruguai x Colômbia',league:'Copa América · Semi'},
+  {flag1:'🇯🇵',flag2:'🇰🇷',title:'Japão x Coreia do Sul',league:'Amistoso Asiático'},
+  {flag1:'🇸🇳',flag2:'🇲🇦',title:'Senegal x Marrocos',league:'Copa das Nações · Final'},
+  {flag1:'🇲🇽',flag2:'🇺🇸',title:'México x EUA',league:'CONCACAF · Final'},
+  {flag1:'🇨🇱',flag2:'🇵🇪',title:'Chile x Peru',league:'Eliminatórias · Rodada 8'},
+];
+
+const OPT_POOL=[
+  {label:'Vitória do {A}',sublabel:'Tempo normal',odds:[1.70,2.10,2.50,2.90]},
+  {label:'Vitória do {B}',sublabel:'Tempo normal',odds:[1.80,2.20,2.60,3.10]},
+  {label:'Empate no 90º',sublabel:'Tempo normal',odds:[2.40,2.80,3.20,3.60]},
+  {label:'Mais de 2,5 gols',sublabel:'Total da partida',odds:[1.60,1.85,2.10,2.40]},
+  {label:'Menos de 2,5 gols',sublabel:'Total da partida',odds:[1.55,1.75,2.00,2.25]},
+  {label:'Ambos marcam',sublabel:'Cada time marca ao menos 1',odds:[1.70,1.95,2.20,2.50]},
+  {label:'Gol no 1º tempo',sublabel:'Antes do intervalo',odds:[1.50,1.70,1.90,2.20]},
+  {label:'Cartão vermelho',sublabel:'Algum jogador expulso',odds:[2.80,3.20,3.80,4.50]},
+  {label:'Placar exato 1x0',sublabel:'Placar ao fim do jogo',odds:[5.50,6.50,7.00,8.00]},
+  {label:'Placar exato 2x1',sublabel:'Placar ao fim do jogo',odds:[7.00,8.50,9.50,11.0]},
+  {label:'Decisão nos pênaltis',sublabel:'Empate no tempo normal',odds:[3.00,3.50,4.00,5.00]},
+  {label:'Nenhum gol no 1º tempo',sublabel:'Placar 0x0 no intervalo',odds:[1.80,2.00,2.40,2.70]},
+];
+
+// ── HELPERS ───────────────────────────────────────────────
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function rnd(min,max){return Math.round((min+Math.random()*(max-min))*10)/10}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
+function disp(n){return Math.round(Math.min(n,MAX_VIS)*10)/10}
+function fmtC(n){return disp(n)+' '+CANDY}
+
+// ── GERAÇÃO: APOSTAS ──────────────────────────────────────
+// Lógica:
+//   Fase 1–2: alwaysWin → saldo pode subir (efeito sedução)
+//   Fase 3–4: perde → resultado final entre 1 e 4 balinhas
+function generateBetPhases(){
+  const out=[], used=[];
+  const winPhases=[true,true,false,false];
+  for(let i=0;i<4;i++){
+    let mi; do{mi=Math.floor(Math.random()*MATCHES.length)}while(used.includes(mi));
+    used.push(mi);
+    const m=MATCHES[mi];
+    const t1=m.title.split(' x ')[0], t2=m.title.split(' x ')[1];
+    const pool=shuffle([...OPT_POOL]);
+    const opts=pool.slice(0,4).map(o=>({
+      label:o.label.replace('{A}',t1).replace('{B}',t2),
+      sublabel:o.sublabel,
+      odd:o.odds[Math.floor(Math.random()*o.odds.length)]
+    }));
+    out.push({
+      title:`Rodada ${i+1} — ${m.title}`,
+      desc:i<2?'As odds parecem irresistíveis. Escolha sua aposta:':'O mercado está volátil. Qual a sua aposta?',
+      match:m, options:opts,
+      alwaysWin:winPhases[i],
+      winnerIdx:Math.floor(Math.random()*4)
+    });
+  }
+  return out;
+}
+
+// ── GERAÇÃO: BANCO ────────────────────────────────────────
+// Rendimentos sorteados em faixas crescentes.
+// Cada fase aplica o rendimento sobre o saldo acumulado.
+// Meta: resultado final entre ~7 e 10 balinhas (sorteio garante isso).
+// Estratégia: soma total de rendimentos entre 40% e 100%
+// distribuída em 4 fatias crescentes com aleatoriedade.
+function generateBankPhases(){
+  // Sorteio do ganho total: de 40% a 100% sobre 5 balinhas → 7 a 10 balinhas
+  // 5 * 1.40 = 7   |   5 * 2.00 = 10
+  const totalMult = rnd(1.40, 2.00); // multiplicador final total
+
+  // Distribui em 4 fases crescentes com variação
+  // Cada fase: f1 < f2 < f3 < f4, soma ≈ totalMult composta
+  // Calculamos taxas por fase de forma que (1+r1)(1+r2)(1+r3)(1+r4) = totalMult
+  // Sorteamos frações crescentes aleatórias e normalizamos
+  let fracs = [rnd(0.5,1.0), rnd(1.0,1.8), rnd(1.8,3.0), rnd(3.0,5.0)];
+  const fracSum = fracs.reduce((a,b)=>a+b,0);
+  // Queremos que produto composto dê totalMult
+  // Raiz 4 do totalMult = taxa média por fase
+  const avgRate = Math.pow(totalMult, 1/4) - 1; // ex: 0.18 = 18%
+  // Escalonamos fracs para que média ponderada = avgRate
+  const scale = avgRate * 4 / fracSum;
+  const rates = fracs.map(f=>Math.round(f*scale*1000)/10); // em %
+
+  const types=['tesouro','cdb','lci','juros'];
+  const names=['Tesouro Selic 2029','CDB 120% do CDI','LCI 98% do CDI','Rendimento consolidado'];
+  const subtitles=['Governo Federal · Liquidez diária','Banco Digital · Cobertura FGC','Banco Imobiliário · Isento de IR','Juros sobre juros · 12 meses'];
+  const rateLabels=['Acumulado no período','Acumulado no período','Acumulado líquido (IR isento)','Maior rendimento do ano'];
+  const rowsData=[
+    [['Emissor','Tesouro Nacional'],['Vencimento','01/03/2029'],['Garantia','Governo Federal'],['IR','Incide na retirada']],
+    [['Emissor','Banco Digital'],['Cobertura','FGC R$ 250 mil'],['Liquidez','No vencimento'],['IR','Regressivo']],
+    [['Emissor','Banco de Crédito'],['Cobertura','FGC R$ 250 mil'],['Liquidez','90 dias carência'],['IR','Isento PF']],
+    [['Aporte inicial','5 🍬'],['Base de cálculo','Saldo acumulado'],['Efeito','Juros sobre juros'],['Meta final','até 10 🍬']],
+  ];
+  const descs=[
+    'Seu banco aplica automaticamente. Rendimento garantido pelo governo.',
+    'Taxa acima do CDI. Rende mais que a fase anterior.',
+    'Isento de IR para pessoa física. Rentabilidade acelerando.',
+    'Os juros incidem sobre o saldo já crescido — o salto final é o maior do ano.',
+  ];
+
+  return types.map((type,i)=>({
+    title:['Meses 1–3:','Meses 4–6:','Meses 7–9:','Meses 10–12:'][i]+' '+names[i],
+    desc:descs[i],
+    product:{type,name:names[i],subtitle:subtitles[i],rate:'+'+rates[i].toFixed(1)+'%',rateLabel:rateLabels[i],rows:rowsData[i]},
+    gainPct:rates[i]
+  }));
+}
+
+// ── UI: BALINHAS ──────────────────────────────────────────
+function renderCandies(newVal, oldVal){
+  const row=document.getElementById('candiesRow');
+  const nc=Math.min(Math.round(newVal),MAX_VIS);
+  const oc=Math.min(Math.round(oldVal!=null?oldVal:newVal),MAX_VIS);
+  row.innerHTML='';
+  for(let i=0;i<nc;i++){
+    const s=document.createElement('span');
+    s.className='candy'+(i>=oc?' added':'');
+    s.textContent=CANDY; row.appendChild(s);
+  }
+  if(newVal>MAX_VIS){
+    const m=document.createElement('span');
+    m.style.cssText='font-size:11px;color:var(--txt2);align-self:center;margin-left:2px';
+    m.textContent='+'+Math.round(newVal-MAX_VIS)+' 🍬'; row.appendChild(m);
+  }
+}
+
+function updateBalance(newVal, oldVal, dir){
+  const el=document.getElementById('balanceDisplay');
+  el.textContent=disp(newVal)+' '+CANDY;
+  el.classList.remove('up','down');
+  if(dir===true)el.classList.add('up');
+  else if(dir===false)el.classList.add('down');
+  renderCandies(newVal, oldVal);
+}
+
+function updateProgress(){
+  const prog=document.getElementById('phaseProgress');
+  prog.innerHTML='';
+  for(let i=0;i<4;i++){
+    const d=document.createElement('div');
+    const isBet=route==='bet';
+    if(i<phase) d.className='pp-dot '+(isBet?'bet-done':'done');
+    else if(i===phase) d.className='pp-dot '+(isBet?'bet-active':'active');
+    else d.className='pp-dot';
+    prog.appendChild(d);
+  }
+}
+
+// ── TELAS ─────────────────────────────────────────────────
+function showScreen(id){
+  ['screen-start','screen-game','screen-end'].forEach(s=>document.getElementById(s).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function startRoute(r){
+  route=r; phase=0; candies=START;
+  histData=[START]; histLabels=['Início'];
+  phases=r==='bet'?generateBetPhases():generateBankPhases();
+  showScreen('screen-game');
+  document.getElementById('modeLabel').textContent=r==='bet'?'Casa de apostas':'Renda fixa';
+  updateBalance(candies,null,null);
+  initChart(); loadPhase();
+}
+
+function initChart(){
+  if(chartInst)chartInst.destroy();
+  const ctx=document.getElementById('balanceChart').getContext('2d');
+  const color=route==='bet'?'#e24b4a':'#1a7a42';
+  chartInst=new Chart(ctx,{
+    type:'line',
+    data:{labels:histLabels,datasets:[{label:'Balinhas',data:histData,borderColor:color,backgroundColor:color+'18',borderWidth:2,tension:.35,fill:true,pointRadius:4,pointBackgroundColor:color}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{beginAtZero:false,min:0,ticks:{callback:v=>v+'🍬',font:{size:10},stepSize:1},grid:{color:'#00000010'}},
+        x:{ticks:{font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function loadPhase(){
+  const data=phases[phase];
+  document.getElementById('phaseBadge').textContent='Fase '+(phase+1)+' de 4';
+  document.getElementById('phaseTitle').textContent=data.title;
+  document.getElementById('phaseDesc').textContent=data.desc;
+  document.getElementById('feedbackArea').classList.add('hidden');
+  document.getElementById('nextBtn').style.display='none';
+  updateProgress();
+  const cont=document.getElementById('phaseContent');
+  cont.innerHTML='';
+  if(route==='bet')renderBetPhase(data,cont);
+  else renderBankPhase(data,cont);
+}
+
+// ── APOSTAS ───────────────────────────────────────────────
+function renderBetPhase(data,cont){
+  const m=data.match;
+  const info=document.createElement('div'); info.className='odds-info';
+  const minO=Math.min(...data.options.map(o=>o.odd)).toFixed(2);
+  const maxO=Math.max(...data.options.map(o=>o.odd)).toFixed(2);
+  info.textContent=`Odds desta rodada: ${minO} – ${maxO} · Sorteio aleatório`;
+  cont.appendChild(info);
+
+  const hdr=document.createElement('div'); hdr.className='bet-header';
+  hdr.innerHTML='<div class="match-flags">'+m.flag1+'<span style="color:rgba(255,255,255,.4);font-size:12px;margin:0 4px">vs</span>'+m.flag2+'</div><div><div class="match-title">'+m.title+'</div><div class="match-league">'+m.league+'</div></div>';
+  cont.appendChild(hdr);
+
+  const opts=document.createElement('div'); opts.className='bet-options';
+  data.options.forEach((opt,i)=>{
+    const el=document.createElement('div');
+    el.className='bet-option'; el.id='opt-'+i;
+    const tag=opt.odd>=4?'<span class="bet-tag hot">Alto risco</span>':opt.odd<=1.8?'<span class="bet-tag safe">Mais seguro</span>':'';
+    el.innerHTML='<div class="bo-left"><span style="font-size:16px">⚽</span><div><div class="bo-label">'+opt.label+tag+'</div><div class="bo-sublabel">'+opt.sublabel+'</div></div></div><div class="bo-odd">'+opt.odd.toFixed(2)+'</div>';
+    el.onclick=()=>selectBet(i,data);
+    opts.appendChild(el);
+  });
+  cont.appendChild(opts);
+}
+
+function selectBet(idx,data){
+  const prev=candies, aw=data.alwaysWin, wi=data.winnerIdx;
+
+  data.options.forEach((_,i)=>{
+    const el=document.getElementById('opt-'+i);
+    el.onclick=null;
+    el.classList.add(aw?(i===wi?'correct':'wrong'):'wrong');
+  });
+
+  let gained=0, lost=0;
+
+  if(aw){
+    // Fases 1-2: ganha com a odd do vencedor sorteado
+    const wonOdd=data.options[wi].odd;
+    const next=prev*wonOdd;
+    gained=Math.round((next-prev)*10)/10;
+    candies=Math.round(next*10)/10;
+  } else {
+    // Fases 3-4: perde de forma que o saldo final fique entre 1 e 4
+    // A perda é calculada para que após as 2 fases ruins o saldo seja 1-4
+    // Aqui: perde 40%–70% do saldo atual (mas nunca abaixo de 1)
+    const lossRate=rnd(0.40, 0.70);
+    lost=Math.round(prev*lossRate*10)/10;
+    // Garante mínimo de 1, máximo que permita chegar a 1-4 no final
+    candies=clamp(Math.round((prev-lost)*10)/10, 1, 4.5);
+  }
+
+  histData.push(disp(candies)); histLabels.push('F'+(phase+1));
+  updateBalance(candies,prev,aw); chartInst.update();
+
+  const fb=document.getElementById('feedbackArea'); fb.classList.remove('hidden');
+  if(aw){
+    const wonOpt=data.options[wi];
+    fb.className='feedback win';
+    fb.innerHTML='<div class="feedback-title">Aposta ganha! 🎉</div>'+
+      '<div class="feedback-body">Resultado: "'+wonOpt.label+'" (odd '+wonOpt.odd.toFixed(2)+'). '+(idx===wi?'Você escolheu certo!':'Você teria ganho se escolhesse essa.')+'</div>'+
+      '<div class="feedback-amounts">'+faItem('Antes',fmtC(prev))+faItem('Ganho','+'+fmtC(gained),'green')+faItem('Total',fmtC(candies),'green')+'</div>';
+  } else {
+    const lostAmt=Math.round((prev-candies)*10)/10;
+    fb.className='feedback lose';
+    fb.innerHTML='<div class="feedback-title">Aposta perdida 😬</div>'+
+      '<div class="feedback-body">Você apostou em "'+data.options[idx].label+'". Nenhuma opção venceu desta vez.</div>'+
+      '<div class="feedback-amounts">'+faItem('Antes',fmtC(prev))+faItem('Perdeu','-'+fmtC(lostAmt),'red')+faItem('Restou',fmtC(candies),'red')+'</div>';
+  }
+  document.getElementById('nextBtn').style.display='block';
+}
+
+function faItem(label,val,color=''){
+  return '<div class="fa-item"><div class="fa-label">'+label+'</div><div class="fa-val'+(color?' '+color:'')+'">'+val+'</div></div>';
+}
+
+// ── BANCO ─────────────────────────────────────────────────
+function renderBankPhase(data,cont){
+  const p=data.product;
+  const el=document.createElement('div'); el.className='bank-product';
+  const rows=p.rows.map(r=>'<div class="bp-row"><span class="bp-row-label">'+r[0]+'</span><span class="bp-row-val">'+r[1]+'</span></div>').join('');
+  el.innerHTML='<div class="bp-top"><div><span class="bp-badge '+p.type+'">'+p.type.toUpperCase()+'</span>'+
+    '<div class="bp-name">'+p.name+'</div><div class="bp-subtitle">'+p.subtitle+'</div></div>'+
+    '<div style="text-align:right"><div class="bp-rate-num">'+p.rate+'</div><div class="bp-rate-label">'+p.rateLabel+'</div></div></div>'+
+    '<hr class="bp-divider">'+rows+
+    '<button class="invest-btn" id="investBtn" onclick="applyBank()">Aplicar agora</button>';
+  cont.appendChild(el);
+}
+
+function applyBank(){
+  const data=phases[phase], prev=candies;
+  const ganho=Math.round(prev*(data.gainPct/100)*10)/10;
+  candies=Math.round((prev+ganho)*10)/10;
+
+  histData.push(disp(candies)); histLabels.push('F'+(phase+1));
+  updateBalance(candies,prev,true); chartInst.update();
+
+  const btn=document.getElementById('investBtn');
+  btn.disabled=true; btn.textContent='Aplicado ✓';
+
+  const fb=document.getElementById('feedbackArea'); fb.classList.remove('hidden');
+  fb.className='feedback neutral';
+  fb.innerHTML='<div class="feedback-title">Rendimento creditado — '+data.product.rate+' neste período</div>'+
+    '<div class="feedback-body">'+data.product.name+' encerrou o período com +'+data.gainPct.toFixed(1)+'% de rendimento real.</div>'+
+    '<div class="feedback-amounts">'+faItem('Antes',fmtC(prev))+faItem('Rendimento','+'+fmtC(ganho),'green')+faItem('Total',fmtC(candies),'green')+'</div>';
+
+  document.getElementById('nextBtn').style.display='block';
+}
+
+// ── PRÓXIMA FASE ──────────────────────────────────────────
+function nextStep(){
+  phase++;
+  if(phase<4){ loadPhase(); }
+  else{
+    if(route==='bet') betFinal=candies; else bankFinal=candies;
+    showEndScreen();
+  }
+}
+
+// ── TELA FINAL ────────────────────────────────────────────
+function showEndScreen(){
+  showScreen('screen-end');
+  const isBet=route==='bet', final=isBet?betFinal:bankFinal;
+  const pct=Math.round(((final-START)/START)*100);
+  const pctStr=(pct>=0?'+':'')+pct+'%';
+
+  document.getElementById('endTitle').textContent=isBet?'Simulação encerrada':'Ano de investimento concluído';
+  document.getElementById('endSubtitle').textContent=isBet
+    ?'Você começou com 5 🍬. Veja o que sobrou depois das apostas.'
+    :'Você começou com 5 🍬. Os juros compostos fizeram o trabalho.';
+
+  document.getElementById('resultCards').innerHTML=
+    '<div class="result-card"><div class="r-label">Inicial</div><div class="r-value" style="color:var(--txt2)">5 🍬</div></div>'+
+    '<div class="result-card"><div class="r-label">'+(isBet?'Casa de apostas':'Renda fixa')+'</div>'+
+    '<div class="r-value '+(pct>=0?'r-green':'r-red')+'">'+fmtC(final)+'</div>'+
+    '<span class="r-pct '+(pct>=0?'r-pct-green':'r-pct-red')+'">'+pctStr+'</span></div>';
+
+  const lesson=document.getElementById('lessonBox');
+  if(isBet){
+    lesson.innerHTML='<h4>O que a simulação mostrou</h4><p>As primeiras rodadas deram lucro — parecia ótimo. Mas nas rodadas 3 e 4 o saldo caiu forte. Você terminou com '+fmtC(final)+', abaixo do que começou. Casas de apostas são projetadas para sempre ter vantagem: no longo prazo, a matemática é contra o apostador.</p>';
+  } else {
+    const gain=Math.round((final-START)*10)/10;
+    lesson.innerHTML='<h4>O que a simulação mostrou</h4><p>Você terminou com '+fmtC(final)+' — um ganho de +'+gain+' balinhas ('+pctStr+'). Cada fase rendeu mais, não só pela taxa, mas porque os juros incidiram sobre um saldo já crescido. Esse é o poder dos juros compostos: discreto no início, explosivo no final.</p>';
+  }
+
+  // Gráfico comparativo
+  const betLine  = isBet  ? histData : [5, Math.round(5*2.1*10)/10, Math.round(5*2.1*0.5*10)/10, Math.round(5*2.1*0.5*0.4*10)/10, betFinal??2];
+  const bankLine = !isBet ? histData : [5, Math.round(5*1.08*10)/10, Math.round(5*1.08*1.15*10)/10, Math.round(5*1.08*1.15*1.25*10)/10, bankFinal??8];
+
+  const ctx=document.getElementById('compareChart').getContext('2d');
+  new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:['Início','Fase 1','Fase 2','Fase 3','Fase 4'],
+      datasets:[
+        {label:'Casa de apostas',data:betLine, borderColor:'#e24b4a',backgroundColor:'#e24b4a18',borderWidth:2,tension:.3,fill:true,pointRadius:3},
+        {label:'Renda fixa',     data:bankLine,borderColor:'#1a7a42',backgroundColor:'#1a7a4218',borderWidth:2,tension:.3,fill:true,pointRadius:3}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12}}},
+      scales:{
+        y:{beginAtZero:false,min:0,ticks:{callback:v=>v+'🍬',font:{size:10}},grid:{color:'#00000010'}},
+        x:{ticks:{font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+// ── REINICIAR ─────────────────────────────────────────────
+function restartApp(){
+  betFinal=null; bankFinal=null; candies=START; phases=[];
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  showScreen('screen-start');
+}
+</script>
+</body>
+</html>
